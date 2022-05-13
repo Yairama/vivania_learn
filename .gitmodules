@@ -1,0 +1,3 @@
+[submodule "vivania_env"]
+	path = vivania_env
+	url = https://gitlab.com/Yairama/vivania_env.git
