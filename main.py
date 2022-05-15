@@ -5,6 +5,8 @@ import torch
 from gym import wrappers
 import time
 
+from numpy import dtype
+
 from ReplayBuffer import ReplayBuffer
 from TD3 import TD3
 from vivania_env.VivaniaEnv import VivaniaEnv
@@ -33,7 +35,7 @@ if not os.path.exists("./results"):
 if save_models and not os.path.exists("./pytorch_models"):
     os.makedirs("./pytorch_models")
 
-env = VivaniaEnv(True)
+env = VivaniaEnv(False)
 
 
 def evaluate_policy(policy, eval_episodes=10):
@@ -41,9 +43,9 @@ def evaluate_policy(policy, eval_episodes=10):
     for _ in range(eval_episodes):
         obs = env.reset()
         done = False
-        print(obs)
         while not done:
-            action = policy.select_action(np.array(obs))
+            action = policy.select_action(np.array(obs, dtype=np.float16))
+            action = action.astype(int)
             obs, reward, done, _ = env.step(action)
             avg_reward += reward
     avg_reward /= eval_episodes
@@ -56,9 +58,9 @@ def evaluate_policy(policy, eval_episodes=10):
 env.seed(seed)
 torch.manual_seed(seed)
 np.random.seed(seed)
-state_dim = env.observation_space.shape[0]
+state_dim = np.array(env.observation_space.sample().reshape(1,-1)).shape[1]
 action_dim = env.action_space.shape[0]
-max_action = float(8)
+max_action = float(9)
 
 policy = TD3(state_dim, action_dim, max_action)
 
@@ -121,13 +123,15 @@ while total_timesteps < max_timesteps:
     if total_timesteps < start_timesteps:
         action = env.action_space.sample()
     else:  # Después de los 10000 timesteps, cambiamos al modelo
-        action = policy.select_action(np.array(obs))
+        print("linea 127")
+        action = policy.select_action(np.array(obs, dtype=np.float16))
         # Si el valor de explore_noise no es 0, añadimos ruido a la acción y lo recortamos en el rango adecuado
         if expl_noise != 0:
             action = (action + np.random.normal(0, expl_noise, size=env.action_space.shape[0])).clip(
                 env.action_space.low, env.action_space.high)
 
     # El agente ejecuta una acción en el entorno y alcanza el siguiente estado y una recompensa
+    action = action.astype(int)
     new_obs, reward, done, _ = env.step(action)
 
     # Comprobamos si el episodio ha terminado

@@ -11,7 +11,7 @@ class TD3(object):
 
     def __init__(self, state_dim, action_dim, max_action):
         #self.device = torch.device("dml" if torch.cuda.is_available() else "cpu")
-        self.device = torch.device("dml")
+        self.device = torch.device("cpu")
         self.actor = Actor(state_dim, action_dim, max_action).to(self.device)
         self.actor_target = Actor(state_dim, action_dim, max_action).to(self.device)
         self.actor_target.load_state_dict(self.actor.state_dict())

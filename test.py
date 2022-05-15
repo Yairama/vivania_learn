@@ -5,7 +5,7 @@ import cv2
 from vivania_env.VivaniaEnv import VivaniaEnv
 
 if __name__ == '__main__':
-    env = VivaniaEnv(hidden=True)
+    env = VivaniaEnv(hidden=False)
     obs = env.reset()
     counter = 0
     while True:

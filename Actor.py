@@ -15,5 +15,5 @@ class Actor(nn.Module):
     def forward(self, x):
         x = F.relu(self.layer_1(x))
         x = F.relu(self.layer_2(x))
-        x = self.max_action * torch.tanh(self.layer_3(x))
+        x = torch.abs(self.max_action * torch.tanh(self.layer_3(x)))
         return x
