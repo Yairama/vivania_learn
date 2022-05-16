@@ -21,7 +21,7 @@ expl_noise = 0.1  # Ruido de exploración: desviación estándar del ruido de ex
 batch_size = 100  # Tamaño del bloque
 discount = 0.99  # Factor de descuento gamma, utilizado en el cáclulo de la recompensa de descuento total
 tau = 0.005  # Ratio de actualización de la red de objetivos
-policy_noise = 0.2  # Desviación estándar del ruido gaussiano añadido a las acciones para fines de exploración
+policy_noise = 0.35  # Desviación estándar del ruido gaussiano añadido a las acciones para fines de exploración
 noise_clip = 0.5  # Valor máximo de ruido gaussiano añadido a las acciones (política)
 policy_freq = 2  # Número de iteraciones a esperar antes de actualizar la red de políticas (actor modelo)
 
@@ -43,7 +43,9 @@ def evaluate_policy(policy, eval_episodes=10):
     for _ in range(eval_episodes):
         obs = env.reset()
         done = False
+        print(f"Episodio {_} *** avg_rewrag: {avg_reward}")
         while not done:
+            #print(obs)
             action = policy.select_action(np.array(obs, dtype=np.float16))
             action = action.astype(int)
             obs, reward, done, _ = env.step(action)
@@ -60,7 +62,7 @@ torch.manual_seed(seed)
 np.random.seed(seed)
 state_dim = np.array(env.observation_space.sample().reshape(1,-1)).shape[1]
 action_dim = env.action_space.shape[0]
-max_action = float(9)
+max_action = float(8)
 
 policy = TD3(state_dim, action_dim, max_action)
 
@@ -68,20 +70,20 @@ replay_buffer = ReplayBuffer()
 evaluations = [evaluate_policy(policy)]
 
 
-# def mkdir(base, name):
-#     path = os.path.join(base, name)
-#     if not os.path.exists(path):
-#         os.makedirs(path)
-#     return path
-#
-#
-# work_dir = mkdir('exp', 'brs')
-# monitor_dir = mkdir(work_dir, 'monitor')
-# max_episode_steps = env.max_episode_steps
-# save_env_vid = False
-# if save_env_vid:
-#     env = wrappers.Monitor(env, monitor_dir, force=True)
-#     env.reset()
+def mkdir(base, name):
+    path = os.path.join(base, name)
+    if not os.path.exists(path):
+        os.makedirs(path)
+    return path
+
+
+work_dir = mkdir('exp', 'brs')
+monitor_dir = mkdir(work_dir, 'monitor')
+max_episode_steps = env.max_episode_steps
+save_env_vid = False
+if save_env_vid:
+    env = wrappers.Monitor(env, monitor_dir, force=True)
+    env.reset()
 
 total_timesteps = 0
 timesteps_since_eval = 0
@@ -123,12 +125,11 @@ while total_timesteps < max_timesteps:
     if total_timesteps < start_timesteps:
         action = env.action_space.sample()
     else:  # Después de los 10000 timesteps, cambiamos al modelo
-        print("linea 127")
         action = policy.select_action(np.array(obs, dtype=np.float16))
         # Si el valor de explore_noise no es 0, añadimos ruido a la acción y lo recortamos en el rango adecuado
         if expl_noise != 0:
             action = (action + np.random.normal(0, expl_noise, size=env.action_space.shape[0])).clip(
-                env.action_space.low, env.action_space.high)
+                0, 8)
 
     # El agente ejecuta una acción en el entorno y alcanza el siguiente estado y una recompensa
     action = action.astype(int)
@@ -141,7 +142,7 @@ while total_timesteps < max_timesteps:
     episode_reward += reward
 
     # Almacenamos la nueva transición en la memoria de repetición de experiencias (ReplayBuffer)
-    replay_buffer.add((obs, new_obs, action, reward, done_bool))
+    replay_buffer.add((np.array(obs).reshape(-1), np.array(new_obs).reshape(-1), action, reward, done_bool))
 
     # Actualizamos el estado, el timestep del número de episodio, el total de timesteps y el número de pasos desde la última evaluación de la política
     obs = new_obs

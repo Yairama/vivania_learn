@@ -40,6 +40,7 @@ class TD3(object):
             done = torch.Tensor(batch_dones).to(self.device)
 
             # Paso 5: A partir del estado siguiente s', el Actor del Target ejecuta la siguiente acción a'.
+
             next_action = self.actor_target.forward(next_state)
 
             # Paso 6: Añadimos ruido gaussiano a la siguiente acción a' y lo cortamos para tenerlo en el rango de valores aceptado por el entorno.
