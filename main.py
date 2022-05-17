@@ -15,9 +15,9 @@ env_name = "Vivania_Env"  # Nombre del entorno (puedes indicar cualquier entorno
 seed = 0  # Valor de la semilla aleatoria
 start_timesteps = 1e4  # Número de of iteraciones/timesteps durante las cuales el modelo elige una acción al azar, y después de las cuales comienza a usar la red de políticas
 eval_freq = 5e3  # Con qué frecuencia se realiza el paso de evaluación (después de cuántos pasos timesteps)
-max_timesteps = 5e5  # Número total de iteraciones/timesteps
+max_timesteps = 9e5  # Número total de iteraciones/timesteps
 save_models = True  # Check Boolean para saber si guardar o no el modelo pre-entrenado
-expl_noise = 0.1  # Ruido de exploración: desviación estándar del ruido de exploración gaussiano
+expl_noise = 0.15  # Ruido de exploración: desviación estándar del ruido de exploración gaussiano
 batch_size = 100  # Tamaño del bloque
 discount = 0.99  # Factor de descuento gamma, utilizado en el cáclulo de la recompensa de descuento total
 tau = 0.005  # Ratio de actualización de la red de objetivos
@@ -35,7 +35,7 @@ if not os.path.exists("./results"):
 if save_models and not os.path.exists("./pytorch_models"):
     os.makedirs("./pytorch_models")
 
-env = VivaniaEnv(False)
+env = VivaniaEnv(True)
 
 
 def evaluate_policy(policy, eval_episodes=10):
@@ -43,7 +43,7 @@ def evaluate_policy(policy, eval_episodes=10):
     for _ in range(eval_episodes):
         obs = env.reset()
         done = False
-        print(f"Episodio {_} *** avg_rewrag: {avg_reward}")
+        #print(f"Episodio {_} *** avg_rewrag: {avg_reward}")
         while not done:
             #print(obs)
             action = policy.select_action(np.array(obs, dtype=np.float16))
@@ -62,13 +62,18 @@ torch.manual_seed(seed)
 np.random.seed(seed)
 state_dim = np.array(env.observation_space.sample().reshape(1,-1)).shape[1]
 action_dim = env.action_space.shape[0]
-max_action = float(8)
+max_action = float(7)
 
 policy = TD3(state_dim, action_dim, max_action)
-
 replay_buffer = ReplayBuffer()
 evaluations = [evaluate_policy(policy)]
 
+# policy.load(file_name, directory="./pytorch_models")
+# evaluations = np.load("./results/%s.npy" % (file_name)).tolist()
+# episode_num=
+# total_timesteps=
+# episode_reward = 0
+# episode_timesteps = 0
 
 def mkdir(base, name):
     path = os.path.join(base, name)
@@ -106,6 +111,7 @@ while total_timesteps < max_timesteps:
         # Evaluamos el episodio y guardamos la política si han pasado las iteraciones necesarias
         if timesteps_since_eval >= eval_freq:
             timesteps_since_eval %= eval_freq
+            file_name = "%s_%s_%s" % ("TD3", env_name, str(seed))
             evaluations.append(evaluate_policy(policy))
             policy.save(file_name, directory="./pytorch_models")
             np.save("./results/%s" % (file_name), evaluations)
@@ -129,7 +135,7 @@ while total_timesteps < max_timesteps:
         # Si el valor de explore_noise no es 0, añadimos ruido a la acción y lo recortamos en el rango adecuado
         if expl_noise != 0:
             action = (action + np.random.normal(0, expl_noise, size=env.action_space.shape[0])).clip(
-                0, 8)
+                0, 7)
 
     # El agente ejecuta una acción en el entorno y alcanza el siguiente estado y una recompensa
     action = action.astype(int)
