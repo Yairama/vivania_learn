@@ -1,4 +1,4 @@
 [submodule "vivania_env"]
 	path = vivania_env
-	url = https://github.com/Yairama/vivania_env.git
+	url = https://github.com/Yairama/vivania_env
 	branch = main
